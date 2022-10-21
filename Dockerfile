@@ -12,6 +12,7 @@ RUN set -ex && \
     REPO=$(mktemp -d) && \
     git clone https://github.com/ajayyy/SponsorBlockServer $REPO --depth 1 && \
     DB=$REPO/databases && \
+    echo "ALTER TABLE \"sponsorTimes\" ALTER COLUMN \"timeSubmitted\" TYPE BIGINT USING \"timeSubmitted\"::BIGINT" > $DB/hack1.sql && \
     cat \
     $DB/_sponsorTimes.db.sql $DB/_upgrade_sponsorTimes_1.sql $DB/_upgrade_sponsorTimes_2.sql \
     $DB/_upgrade_sponsorTimes_3.sql $DB/_upgrade_sponsorTimes_4.sql $DB/_upgrade_sponsorTimes_5.sql \
@@ -25,7 +26,7 @@ RUN set -ex && \
     $DB/_upgrade_sponsorTimes_27.sql $DB/_upgrade_sponsorTimes_28.sql $DB/_upgrade_sponsorTimes_29.sql \
     $DB/_upgrade_sponsorTimes_30.sql $DB/_upgrade_sponsorTimes_31.sql $DB/_upgrade_sponsorTimes_32.sql \
     $DB/_upgrade_sponsorTimes_33.sql $DB/_upgrade_sponsorTimes_34.sql \
-    $DB/_sponsorTimes_indexes.sql \
+    $DB/_sponsorTimes_indexes.sql $DB/hack1.sql && \
     > /out/0_init.sql && \
     cp $DBDL/*csv /out/ && \
     sed -i'' 's/sha256("videoID")/sha256("videoID"::bytea)/g' /out/0_init.sql && \
