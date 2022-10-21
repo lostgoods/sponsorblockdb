@@ -20,9 +20,9 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v3.2.0
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: quay.io/sim/sponsorblockdb
           flavor: |
-            latest=false
+            latest=true
           tags: |
             type=ref,event=pr
             type=ref,event=branch
@@ -35,9 +35,9 @@ jobs:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: quay.io
+          username: sim
+          password: ${{ secrets.MY_QUAY_TOKEN }}
       - name: Cache Docker layers
         uses: actions/cache@v2.1.5
         with:
