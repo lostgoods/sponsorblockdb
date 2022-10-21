@@ -32,10 +32,10 @@ jobs:
           ls -l $DBDLZ
           du -ma $DBDLZ
 
-          # decompress all files
-          for i in $DBDLZ/*; do
-            gunzip -c "$i" > "${DBDL}/$(basename $i .gz)"
+          for file in $(find $DBDLZ -name '*.gz'); do
+            gunzip -c $file >> $DBDL/$(basename $file .gz)
           done
+
           ls -l $DBDL
           du -ma $DBDL
 
