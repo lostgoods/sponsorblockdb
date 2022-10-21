@@ -41,7 +41,7 @@ jobs:
 
           # update thru rsync
           for table in $TABLES; do
-            rsync -ztvP --no-W --inplace --zc=lz4 --contimeout=10 \
+            rsync -ztvP --no-W --inplace --contimeout=10 \
             "rsync://rsync.sponsor.ajay.app:31111/sponsorblock/${table}_${LAST_UPDATED_AT}.csv" "$DBDL/${table}.csv"
           done
 
