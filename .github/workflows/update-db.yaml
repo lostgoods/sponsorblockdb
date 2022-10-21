@@ -24,6 +24,12 @@ jobs:
           LAST_UPDATED_AT=$(jq .lastUpdated < $RESPONSE)
           TABLES=$(jq -r .links[].table < $RESPONSE)
 
+          # check whether LAST_UPDATED_AT is valid
+          if [[ $LAST_UPDATED_AT == null ]]; then
+            echo "Invalid lastUpdated"
+            exit 1
+          fi
+
           # get latest released files
           for table in $TABLES; do
             wget -q "https://github.com/sim1/sponsorblockdb/releases/latest/download/${table}.csv.gz" -O "${DBDLZ}/${table}.csv.gz" || \
@@ -32,10 +38,10 @@ jobs:
           ls -l $DBDLZ
           du -ma $DBDLZ
 
+          # uncompress any files
           for file in $(find $DBDLZ -name '*.gz'); do
             gunzip -c $file > $DBDL/$(basename $file .gz)
           done
-
           ls -l $DBDL
           du -ma $DBDL
 
@@ -50,7 +56,6 @@ jobs:
           for file in $(find $DBDL -name '*.csv'); do
             gzip -c "$file" > "${DBDLZ}/${file}.gz"
           done
-
 
           # release all files
           wget -qO- https://github.com/c4milo/github-release/releases/download/v1.1.0/github-release_v1.1.0_linux_amd64.tar.gz | tar zxvf -
