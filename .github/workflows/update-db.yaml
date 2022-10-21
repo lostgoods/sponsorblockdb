@@ -30,14 +30,14 @@ jobs:
             rm -f "${DBDLZ}/${table}.csv.gz" && wget -q "https://sponsor.ajay.app/database/${table}.csv" -O "${DBDL}/${table}.csv"
           done
           ls -l $DBDLZ
-          du -m $DBDLZ/*
+          du -ma $DBDLZ
 
           # decompress all files
           for i in $DBDLZ/*; do
             gunzip -c "$i" > "${DBDL}/$(basename $i .gz)"
           done
           ls -l $DBDL
-          du -m $DBDL/*
+          du -ma $DBDL
 
           # update thru rsync
           for table in $TABLES; do
