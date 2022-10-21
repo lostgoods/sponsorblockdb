@@ -26,8 +26,8 @@ jobs:
 
           # get latest released files
           for table in $TABLES; do
-            curl -sL https://github.com/sim1/sponsorblockdb/releases/latest/download/${table}.csv.gz -O $DBDLZ/${table}.csv.gz || \
-            curl -v -L https://sponsor.ajay.app/database/${table}.csv -O $DBDL/${table}.csv
+            curl -sL "https://github.com/sim1/sponsorblockdb/releases/latest/download/${table}.csv.gz" -O "${DBDLZ}/${table}.csv.gz" || \
+            curl -v -L "https://sponsor.ajay.app/database/${table}.csv" -O "${DBDL}/${table}.csv"
           done
           ls -l $DBDLZ
           du -m $DBDLZ/*
