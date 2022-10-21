@@ -54,7 +54,7 @@ jobs:
           # compress all files again
           rm -f $DBDLZ/*csv.gz || true
           for file in $(find $DBDL -name '*.csv'); do
-            gzip -c "$file" > "${DBDLZ}/${file}.gz"
+            gzip -c "$file" > "${DBDLZ}/$(basename $file).gz"
           done
 
           # release all files
