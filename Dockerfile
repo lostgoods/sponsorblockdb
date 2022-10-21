@@ -1,7 +1,7 @@
 FROM alpine AS builder1
 
 RUN set -ex && \
-    apk add rsync wget ca-certificates jq git openssh-client bash && \
+    apk add rsync wget ca-certificates jq git openssh-client bash coreutils && \
     DBDL=$(mktemp -d) && \
     DBDLZ=$(mktemp -d) && \
     mkdir -p /out && \
