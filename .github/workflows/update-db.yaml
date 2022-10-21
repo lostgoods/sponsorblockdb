@@ -1,0 +1,76 @@
+# on push
+on:
+  schedule:
+    - cron: "14,33,52 * * * *"
+  push:
+    branches:
+      - main
+
+jobs:
+  update-db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download SponsorBlock database
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -ex
+          # init
+          RESPONSE=$(mktemp)
+          DBDL=$(mktemp -d)
+          DBDLZ=$(mktemp -d)
+
+          # get metadata
+          curl -v -sL https://sponsor.ajay.app/database.json?generate=false -o $RESPONSE
+          LAST_UPDATED_AT=$(jq .lastUpdated < $RESPONSE)
+          TABLES=$(jq -r .links[].table < $RESPONSE)
+
+          # check whether LAST_UPDATED_AT is valid
+          if [[ $LAST_UPDATED_AT == null ]]; then
+            echo "Invalid lastUpdated"
+            exit 1
+          fi
+
+          # get latest released files
+          for table in $TABLES; do
+            wget -q "https://github.com/sim1/sponsorblockdb/releases/latest/download/${table}.csv.gz" -O "${DBDLZ}/${table}.csv.gz" || \
+            rm -f "${DBDLZ}/${table}.csv.gz" && wget -q "https://sponsor.ajay.app/database/${table}.csv" -O "${DBDL}/${table}.csv"
+          done
+          ls -l $DBDLZ
+          du -ma $DBDLZ
+
+          # uncompress any files
+          for file in $(find $DBDLZ -name '*.gz'); do
+            gunzip -c $file > $DBDL/$(basename $file .gz)
+          done
+          ls -l $DBDL
+          du -ma $DBDL
+
+          # update thru rsync
+          for table in $TABLES; do
+            rsync -ztvP --no-W --inplace --contimeout=10 \
+            "rsync://rsync.sponsor.ajay.app:31111/sponsorblock/${table}_${LAST_UPDATED_AT}.csv" "$DBDL/${table}.csv"
+          done
+
+          # compress all files again
+          rm -f $DBDLZ/*csv.gz || true
+          for file in $(find $DBDL -name '*.csv'); do
+            gzip -c "$file" > "${DBDLZ}/$(basename $file).gz"
+          done
+
+          # make sqlite sponsorTimes database
+          cp sponsorTimes.sqlite $DBDLZ
+          zcat $DBDLZ/sponsorTimes.csv.gz | sqlite3 -csv -separator ',' $DBDLZ/sponsorTimes.sqlite ".import /dev/stdin sponsorTimes"
+          # gzip sqlite database
+          gzip -c $DBDLZ/sponsorTimes.sqlite > $DBDLZ/sponsorTimes.sqlite.gz
+
+          split -b 2000m "$DBDLZ/sponsorTimes.sqlite" "$DBDLZ/sponsorTimes.sqlite.part"
+          rm -f "$DBDLZ/sponsorTimes.sqlite"
+
+          du -ma $DBDLZ
+          # release all files
+          wget -qO- https://github.com/c4milo/github-release/releases/download/v1.1.0/github-release_v1.1.0_linux_amd64.tar.gz | tar zxvf -
+          mv github-release /usr/local/bin/github-release
+          chmod +x /usr/local/bin/github-release
+          github-release sim1/sponsorblockdb "${LAST_UPDATED_AT}" main "SponsorBlock database v${LAST_UPDATED_AT}" "${DBDLZ}/*"
