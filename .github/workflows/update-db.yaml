@@ -1,0 +1,59 @@
+# on push
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download SponsorBlock database
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -ex
+          # init
+          RESPONSE=$(mktemp)
+          DBDL=$(mktemp -d)
+          DBDLZ=$(mktemp -d)
+
+          # get metadata
+          curl -v -sL https://sponsor.ajay.app/database.json?generate=false -o $RESPONSE
+          LAST_UPDATED_AT=$(jq .lastUpdated < $RESPONSE)
+          TABLES=$(jq -r .links[].table < $RESPONSE)
+
+          # get latest released files
+          for table in $TABLES; do
+            curl -sL https://github.com/sim1/sponsorblockdb/releases/latest/download/${table}.csv.gz -O $DBDLZ/${table}.csv.gz || \
+            curl -sL https://sponsor.ajay.app/database/${table}.csv -O $DBDL/${table}.csv
+          done
+          ls -l $DBDLZ
+          du -m $DBDLZ/*
+
+          # decompress all files
+          for i in $DBDLZ/*; do
+            gunzip -c $i > $DBDL/$(basename $i .gz)
+          done
+          ls -l $DBDL
+          du -m $DBDL/*
+
+          # update thru rsync
+          for table in $TABLES; do
+            rsync -ztvP --no-W --inplace --zc=lz4 --contimeout=10 \
+            rsync://rsync.sponsor.ajay.app:31111/sponsorblock/${table}_${LAST_UPDATED_AT}.csv $DBDL/${table}.csv
+          done
+
+          # compress all files again
+          rm $DBDLZ/*csv.gz
+          for i in $DBDL/*; do
+            gzip -c $i > $DBDLZ/$(basename $i).gz
+          done
+
+
+          # release all files
+          wget -qO- https://github.com/c4milo/github-release/releases/download/v1.1.0/github-release_v1.1.0_linux_amd64.tar.gz | tar zxvf -
+          mv github-release /usr/local/bin/github-release
+          chmod +x /usr/local/bin/github-release
+          github-release sim1/sponsorblockdb "${LAST_UPDATED_AT}" main "SponsorBlock database v${LAST_UPDATED_AT}" "${DBDLZ}/*"
