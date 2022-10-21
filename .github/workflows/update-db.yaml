@@ -27,14 +27,14 @@ jobs:
           # get latest released files
           for table in $TABLES; do
             wget "https://github.com/sim1/sponsorblockdb/releases/latest/download/${table}.csv.gz" -O "${DBDLZ}/${table}.csv.gz" || \
-            wget "https://sponsor.ajay.app/database/${table}.csv" -O "${DBDL}/${table}.csv"
+            rm -f "${DBDLZ}/${table}.csv.gz" && wget "https://sponsor.ajay.app/database/${table}.csv" -O "${DBDL}/${table}.csv"
           done
           ls -l $DBDLZ
           du -m $DBDLZ/*
 
           # decompress all files
           for i in $DBDLZ/*; do
-            gunzip -c $i > $DBDL/$(basename $i .gz)
+            gunzip -c "$i" > "${DBDL}/$(basename $i .gz)"
           done
           ls -l $DBDL
           du -m $DBDL/*
@@ -42,13 +42,13 @@ jobs:
           # update thru rsync
           for table in $TABLES; do
             rsync -ztvP --no-W --inplace --zc=lz4 --contimeout=10 \
-            rsync://rsync.sponsor.ajay.app:31111/sponsorblock/${table}_${LAST_UPDATED_AT}.csv $DBDL/${table}.csv
+            "rsync://rsync.sponsor.ajay.app:31111/sponsorblock/${table}_${LAST_UPDATED_AT}.csv" "$DBDL/${table}.csv"
           done
 
           # compress all files again
           rm $DBDLZ/*csv.gz
           for i in $DBDL/*; do
-            gzip -c $i > $DBDLZ/$(basename $i).gz
+            gzip -c "$i" > "$DBDLZ/$(basename $i).gz"
           done
 
 
