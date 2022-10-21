@@ -33,7 +33,7 @@ jobs:
           du -ma $DBDLZ
 
           for file in $(find $DBDLZ -name '*.gz'); do
-            gunzip -c $file >> $DBDL/$(basename $file .gz)
+            gunzip -c $file > $DBDL/$(basename $file .gz)
           done
 
           ls -l $DBDL
@@ -46,9 +46,9 @@ jobs:
           done
 
           # compress all files again
-          rm $DBDLZ/*csv.gz
-          for i in $DBDL/*; do
-            gzip -c "$i" > "$DBDLZ/$(basename $i).gz"
+          rm -f $DBDLZ/*csv.gz || true
+          for file in $(find $DBDL -name '*.csv'); do
+            gzip -c "$file" > "${DBDLZ}/${file}.gz"
           done
 
 
