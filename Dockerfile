@@ -34,6 +34,7 @@ RUN set -ex && \
     $DB/_upgrade_sponsorTimes_33.sql $DB/_upgrade_sponsorTimes_34.sql \
     $DB/_sponsorTimes_indexes.sql \
     > /out/0_init.sql && \
+    sed -i'' 's/sha256("videoID")/sha256("videoID"::bytea)/g' /out/0_init.sql && \
     wget https://raw.githubusercontent.com/pavanchhatpar/csv-to-sql-converter/master/csv-sql.sh && \
     chmod +x ./csv-sql.sh && \
     for file in $(find $DBDL -name "*.csv"); do bash ./csv-sql.sh $file >> /out/1_x_init_$(basename $file .csv).sql; done
