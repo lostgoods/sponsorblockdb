@@ -26,8 +26,8 @@ jobs:
 
           # get latest released files
           for table in $TABLES; do
-            wget "https://github.com/sim1/sponsorblockdb/releases/latest/download/${table}.csv.gz" -O "${DBDLZ}/${table}.csv.gz" || \
-            rm -f "${DBDLZ}/${table}.csv.gz" && wget "https://sponsor.ajay.app/database/${table}.csv" -O "${DBDL}/${table}.csv"
+            wget -q "https://github.com/sim1/sponsorblockdb/releases/latest/download/${table}.csv.gz" -O "${DBDLZ}/${table}.csv.gz" || \
+            rm -f "${DBDLZ}/${table}.csv.gz" && wget -q "https://sponsor.ajay.app/database/${table}.csv" -O "${DBDL}/${table}.csv"
           done
           ls -l $DBDLZ
           du -m $DBDLZ/*
