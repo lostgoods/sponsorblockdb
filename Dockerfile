@@ -1,20 +1,13 @@
 FROM alpine AS builder1
 
 RUN set -ex && \
-    apk add rsync wget ca-certificates jq git openssh-client bash coreutils && \
+    apk add rsync wget ca-certificates jq git openssh-client bash coreutils file && \
     DBDL=$(mktemp -d) && \
     DBDLZ=$(mktemp -d) && \
     mkdir -p /out && \
-    wget -qO $DBDLZ/categoryVotes.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/categoryVotes.csv.gz && \
-    wget -qO $DBDLZ/lockCategories.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/lockCategories.csv.gz && \
-    wget -qO $DBDLZ/ratings.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/ratings.csv.gz && \
     wget -qO $DBDLZ/sponsorTimes.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/sponsorTimes.csv.gz && \
-    wget -qO $DBDLZ/unlistedVideos.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/unlistedVideos.csv.gz && \
-    wget -qO $DBDLZ/userNames.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/userNames.csv.gz && \
     wget -qO $DBDLZ/videoInfo.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/videoInfo.csv.gz && \
-    wget -qO $DBDLZ/vipUsers.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/vipUsers.csv.gz && \
-    wget -qO $DBDLZ/warnings.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/warnings.csv.gz && \
-    for file in $(find $DBDLZ -name "*.gz"); do gzip -c $file > $DBDL/$(basename $file .gz); rm $file; done && \
+    for file in $(find $DBDLZ -name "*.gz"); do gzip -d -c $file > $DBDL/$(basename $file .gz); rm $file; done && \
     rm -rf $DBDLZ && \
     REPO=$(mktemp -d) && \
     git clone https://github.com/ajayyy/SponsorBlockServer $REPO --depth 1 && \
@@ -34,10 +27,12 @@ RUN set -ex && \
     $DB/_upgrade_sponsorTimes_33.sql $DB/_upgrade_sponsorTimes_34.sql \
     $DB/_sponsorTimes_indexes.sql \
     > /out/0_init.sql && \
+    cp $DBDL/*csv /out/ && \
     sed -i'' 's/sha256("videoID")/sha256("videoID"::bytea)/g' /out/0_init.sql && \
-    wget https://raw.githubusercontent.com/pavanchhatpar/csv-to-sql-converter/master/csv-sql.sh && \
-    chmod +x ./csv-sql.sh && \
-    for file in $(find $DBDL -name "*.csv"); do bash ./csv-sql.sh $file >> /out/1_x_init_$(basename $file .csv).sql; done
+    for i in $(find $DBDL -name "*.csv"); do \
+    file $i && \
+    echo "COPY \"$(basename $i .csv)\" FROM '/docker-entrypoint-initdb.d/$(basename $i)' WITH (FORMAT csv, HEADER true, DELIMITER ',');" >> /out/9_$(basename $i .csv).sql; \
+    done
 
 FROM postgres:15-alpine AS prebuild
 
