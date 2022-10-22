@@ -2,12 +2,10 @@ FROM alpine AS builder1
 
 RUN set -ex && \
     apk add rsync wget ca-certificates jq git openssh-client bash coreutils file && \
-    DBDL=$(mktemp -d) && \
     DBDLZ=$(mktemp -d) && \
     mkdir -p /out && \
     wget -qO $DBDLZ/sponsorTimes.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/sponsorTimes.csv.gz && \
     wget -qO $DBDLZ/videoInfo.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/videoInfo.csv.gz && \
-    for file in $(find $DBDLZ -name "*.gz"); do gzip -d -c $file > $DBDL/$(basename $file .gz); rm $file; done && \
     rm -rf $DBDLZ && \
     REPO=$(mktemp -d) && \
     git clone https://github.com/ajayyy/SponsorBlockServer $REPO --depth 1 && \
@@ -28,11 +26,10 @@ RUN set -ex && \
     $DB/_upgrade_sponsorTimes_33.sql $DB/_upgrade_sponsorTimes_34.sql \
     $DB/_sponsorTimes_indexes.sql $DB/hack1.sql \
     > /out/0_init.sql && \
-    cp $DBDL/*csv /out/ && \
+    cp $DBDLZ/*csv.gz /out/ && \
     sed -i'' 's/sha256("videoID")/sha256("videoID"::bytea)/g' /out/0_init.sql && \
-    for i in $(find $DBDL -name "*.csv"); do \
-    file $i && \
-    echo "COPY \"$(basename $i .csv)\" FROM '/docker-entrypoint-initdb.d/$(basename $i)' WITH (FORMAT csv, HEADER true, DELIMITER ',');" >> /out/9_$(basename $i .csv).sql; \
+    for i in $(find $DBDLZ -name "*.csv.gz"); do \
+    echo "COPY \"$(basename $i .csv)\" FROM PROGRAM 'zcat /docker-entrypoint-initdb.d/$(basename $i)' WITH (FORMAT csv, HEADER true, DELIMITER ',');" >> /out/9_$(basename $i .csv).sql; \
     done
 
 FROM postgres:15-alpine AS prebuild
