@@ -57,6 +57,12 @@ jobs:
             gzip -c "$file" > "${DBDLZ}/$(basename $file).gz"
           done
 
+          # make sqlite sponsorTimes database
+          cp sponsorTimes.sqlite $DBDLZ
+          zcat $DBDLZ/sponsorTimes.gz | sqlite3 $DBDLZ/sponsorTimes.sqlite ".import /dev/stdin sponsorTimes"
+          # gzip sqlite database
+          gzip -c $DBDLZ/sponsorTimes.sqlite > $DBDLZ/sponsorTimes.sqlite.gz
+
           # release all files
           wget -qO- https://github.com/c4milo/github-release/releases/download/v1.1.0/github-release_v1.1.0_linux_amd64.tar.gz | tar zxvf -
           mv github-release /usr/local/bin/github-release
