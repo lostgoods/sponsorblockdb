@@ -59,10 +59,14 @@ jobs:
 
           # make sqlite sponsorTimes database
           cp sponsorTimes.sqlite $DBDLZ
-          zcat $DBDLZ/sponsorTimes.gz | sqlite3 $DBDLZ/sponsorTimes.sqlite ".import /dev/stdin sponsorTimes"
+          zcat $DBDLZ/sponsorTimes.csv.gz | sqlite3 -csv -separator ',' $DBDLZ/sponsorTimes.sqlite ".import /dev/stdin sponsorTimes"
           # gzip sqlite database
           gzip -c $DBDLZ/sponsorTimes.sqlite > $DBDLZ/sponsorTimes.sqlite.gz
 
+          split -b 2000m "$DBDLZ/sponsorTimes.sqlite" "$DBDLZ/sponsorTimes.sqlite.part"
+          rm -f "$DBDLZ/sponsorTimes.sqlite"
+
+          du -ma $DBDLZ
           # release all files
           wget -qO- https://github.com/c4milo/github-release/releases/download/v1.1.0/github-release_v1.1.0_linux_amd64.tar.gz | tar zxvf -
           mv github-release /usr/local/bin/github-release
