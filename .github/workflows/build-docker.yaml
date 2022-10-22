@@ -14,6 +14,14 @@ jobs:
     name: Publish Docker image
     runs-on: ubuntu-latest
     steps:
+      - name: Cleanup
+        run: |
+          df -h
+          set -ex
+          wget -qO- https://raw.githubusercontent.com/apache/flink/271ef7b7dfac195b43abced8b81c38998855dabf/tools/azure-pipelines/free_disk_space.sh | bash
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
       - name: Checkout
         uses: actions/checkout@v2
       - name: Docker meta
