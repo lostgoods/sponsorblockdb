@@ -25,10 +25,10 @@ RUN set -ex && \
     $DB/_upgrade_sponsorTimes_33.sql $DB/_upgrade_sponsorTimes_34.sql \
     $DB/_sponsorTimes_indexes.sql $DB/hack1.sql \
     > /out/0_init.sql && \
-    mv $DBDLZ/*csv.gz /out/ && \
     sed -i'' 's/sha256("videoID")/sha256("videoID"::bytea)/g' /out/0_init.sql && \
     for i in $(find $DBDLZ -name "*.csv.gz"); do \
-    echo "COPY \"$(basename $i .csv.gz)\" FROM PROGRAM 'zcat /docker-entrypoint-initdb.d/$(basename $i)' WITH (FORMAT csv, HEADER true, DELIMITER ',');" >> /out/9_$(basename $i .csv).sql; \
+    echo "COPY \"$(basename $i .csv.gz)\" FROM PROGRAM 'zcat /docker-entrypoint-initdb.d/$(basename $i)' WITH (FORMAT csv, HEADER true, DELIMITER ',');" >> /out/9_$(basename $i .csv.gz).sql; \
+    mv $DBDLZ/*csv.gz /out/ && \
     done
 
 FROM postgres:15-alpine AS prebuild
