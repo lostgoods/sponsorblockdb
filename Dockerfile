@@ -28,8 +28,8 @@ RUN set -ex && \
     sed -i'' 's/sha256("videoID")/sha256("videoID"::bytea)/g' /out/0_init.sql && \
     for i in $(find $DBDLZ -name "*.csv.gz"); do \
     echo "COPY \"$(basename $i .csv.gz)\" FROM PROGRAM 'zcat /docker-entrypoint-initdb.d/$(basename $i)' WITH (FORMAT csv, HEADER true, DELIMITER ',');" >> /out/9_$(basename $i .csv.gz).sql; \
-    done
-    mv $DBDLZ/*csv.gz /out/ && \
+    done && \
+    mv $DBDLZ/*csv.gz /out/
 
 FROM postgres:15-alpine AS prebuild
 
