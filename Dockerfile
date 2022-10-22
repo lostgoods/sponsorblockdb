@@ -1,15 +1,13 @@
-FROM alpine AS builder1
+FROM alpine AS downloader
 
 RUN set -ex && \
     apk add rsync wget ca-certificates jq git openssh-client bash coreutils file && \
-    DBDLZ=$(mktemp -d) && \
     mkdir -p /out && \
-    wget -qO $DBDLZ/sponsorTimes.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/sponsorTimes.csv.gz && \
-    wget -qO $DBDLZ/videoInfo.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/videoInfo.csv.gz && \
+    for i in sponsorTImes; do wget -qO /out/$i.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/$i.csv.gz; done && \
     REPO=$(mktemp -d) && \
     git clone https://github.com/ajayyy/SponsorBlockServer $REPO --depth 1 && \
     DB=$REPO/databases && \
-    echo "ALTER TABLE \"sponsorTimes\" ALTER COLUMN \"timeSubmitted\" TYPE BIGINT USING \"timeSubmitted\"::BIGINT" > $DB/hack1.sql && \
+    echo "ALTER TABLE \"sponsorTimes\" ALTER COLUMN \"timeSubmitted\" TYPE BIGINT USING \"timeSubmitted\"::BIGINT;" >> $DB/hack1.sql && \
     cat \
     $DB/_sponsorTimes.db.sql $DB/_upgrade_sponsorTimes_1.sql $DB/_upgrade_sponsorTimes_2.sql \
     $DB/_upgrade_sponsorTimes_3.sql $DB/_upgrade_sponsorTimes_4.sql $DB/_upgrade_sponsorTimes_5.sql \
@@ -26,19 +24,21 @@ RUN set -ex && \
     $DB/_sponsorTimes_indexes.sql $DB/hack1.sql \
     > /out/0_init.sql && \
     sed -i'' 's/sha256("videoID")/sha256("videoID"::bytea)/g' /out/0_init.sql && \
-    for i in $(find $DBDLZ -name "*.csv.gz"); do \
-    echo "COPY \"$(basename $i .csv.gz)\" FROM PROGRAM 'zcat /docker-entrypoint-initdb.d/$(basename $i)' WITH (FORMAT csv, HEADER true, DELIMITER ',');" >> /out/9_$(basename $i .csv.gz).sql; \
-    done && \
-    mv $DBDLZ/*csv.gz /out/
-
+    n=1 && \
+    for i in $(find /out -name "*.csv.gz"); do \
+    n=$((n+1)) && \
+    echo "COPY \"$(basename $i .csv.gz)\" FROM PROGRAM 'zcat /docker-entrypoint-initdb.d/$(basename $i)' WITH (FORMAT csv, HEADER true, DELIMITER ',');" >> "/out/${n}_1_$(basename $i .csv.gz).sql"; \
+    done
 FROM postgres:15-alpine AS prebuild
 
-COPY --from=builder1 /out /docker-entrypoint-initdb.d/
+COPY --from=downloader /out /docker-entrypoint-initdb.d/
 RUN grep -v 'exec "$@"' /usr/local/bin/docker-entrypoint.sh > /docker-entrypoint.sh && chmod 755 /docker-entrypoint.sh
+
 
 ENV POSTGRES_HOST_AUTH_METHOD trust
 ENV POSTGRES_DB sponsorTimes
-RUN /docker-entrypoint.sh postgres \
+RUN set -ex && \
+    /docker-entrypoint.sh postgres \
     -c fsync=off \
     -c full_page_writes=off \
     -c wal_level=minimal \
@@ -49,8 +49,7 @@ RUN /docker-entrypoint.sh postgres \
     -c synchronous_commit=off \
     -c checkpoint_timeout=1h \
     -c max_wal_size=1GB \
-    -c shared_buffers=4GB && \
-    sync
+    -c shared_buffers=4GB
 
 FROM postgres:15-alpine
 COPY --from=prebuild /var/lib/postgresql/data /var/lib/postgresql/data
