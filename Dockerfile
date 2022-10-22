@@ -3,7 +3,7 @@ FROM alpine AS downloader
 RUN set -ex && \
     apk add rsync wget ca-certificates jq git openssh-client bash coreutils file && \
     mkdir -p /out && \
-    for i in sponsorTImes; do wget -qO /out/$i.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/$i.csv.gz; done && \
+    for i in sponsorTimes; do wget -qO /out/$i.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/$i.csv.gz; done && \
     REPO=$(mktemp -d) && \
     git clone https://github.com/ajayyy/SponsorBlockServer $REPO --depth 1 && \
     DB=$REPO/databases && \
