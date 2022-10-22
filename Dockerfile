@@ -42,7 +42,18 @@ RUN grep -v 'exec "$@"' /usr/local/bin/docker-entrypoint.sh > /docker-entrypoint
 
 ENV POSTGRES_HOST_AUTH_METHOD trust
 ENV POSTGRES_DB sponsorTimes
-RUN /docker-entrypoint.sh postgres -c fsync=off && \
+RUN /docker-entrypoint.sh postgres \
+    -c fsync=off \
+    -c full_page_writes=off \
+    -c wal_level=minimal \
+    -c wal_keep_size=0 \
+    -c archive_mode=off \
+    -c max_wal_senders=0 \
+    -c autovacuum=off \
+    -c synchronous_commit=off \
+    -c checkpoint_timeout=1h \
+    -c max_wal_size=1GB \
+    -c shared_buffers=4GB && \
     sync
 
 FROM postgres:15-alpine
