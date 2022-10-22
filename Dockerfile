@@ -6,7 +6,6 @@ RUN set -ex && \
     mkdir -p /out && \
     wget -qO $DBDLZ/sponsorTimes.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/sponsorTimes.csv.gz && \
     wget -qO $DBDLZ/videoInfo.csv.gz https://github.com/sim1/sponsorblockdb/releases/latest/download/videoInfo.csv.gz && \
-    rm -rf $DBDLZ && \
     REPO=$(mktemp -d) && \
     git clone https://github.com/ajayyy/SponsorBlockServer $REPO --depth 1 && \
     DB=$REPO/databases && \
