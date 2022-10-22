@@ -48,7 +48,7 @@ RUN set -ex && \
     -c autovacuum=off \
     -c synchronous_commit=off \
     -c checkpoint_timeout=1h \
-    -c max_wal_size=1GB \
+    -c max_wal_size=10GB \
     -c shared_buffers=4GB
 
 FROM postgres:15-alpine
