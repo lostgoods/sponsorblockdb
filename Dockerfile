@@ -42,7 +42,8 @@ RUN grep -v 'exec "$@"' /usr/local/bin/docker-entrypoint.sh > /docker-entrypoint
 
 ENV POSTGRES_HOST_AUTH_METHOD trust
 ENV POSTGRES_DB sponsorTimes
-RUN /docker-entrypoint.sh postgres
+RUN /docker-entrypoint.sh postgres -c fsync=off && \
+    sync
 
 FROM postgres:15-alpine
 COPY --from=prebuild /var/lib/postgresql/data /var/lib/postgresql/data
