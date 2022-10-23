@@ -24,6 +24,13 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
+      - name: Cleanup Disk
+        uses: curoky/cleanup-disk-action@v2.0
+        with:
+          retain: ""
+      - name: Check space left
+        run: |
+          df -h
       - name: Checkout
         uses: actions/checkout@v2
       - name: Docker meta
