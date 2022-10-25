@@ -8,6 +8,7 @@ RUN set -ex && \
     git clone https://github.com/ajayyy/SponsorBlockServer $REPO --depth 1 && \
     DB=$REPO/databases && \
     echo "ALTER TABLE \"sponsorTimes\" ALTER COLUMN \"timeSubmitted\" TYPE BIGINT USING \"timeSubmitted\"::BIGINT;" >> $DB/hack1.sql && \
+    echo "CREATE VIEW public.\"sponsor_times\" AS SELECT * FROM public.\"sponsorTimes\";" >> $DB/hack1.sql && \
     cat \
     $DB/_sponsorTimes.db.sql $DB/_upgrade_sponsorTimes_1.sql $DB/_upgrade_sponsorTimes_2.sql \
     $DB/_upgrade_sponsorTimes_3.sql $DB/_upgrade_sponsorTimes_4.sql $DB/_upgrade_sponsorTimes_5.sql \
